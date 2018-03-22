@@ -190,7 +190,18 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
           set -x
           cd ${paths.project_src_prefix}
           tox --version
-          tox -vv --workdir /tmp/.tensile-tox ${tox_file}
+          tox -vv --workdir /tmp/.tensile-tox ${tox_file} -e lint
+        """
+      }
+    }
+    stage( "Test ${compiler_args.compiler_name} ${compiler_args.build_config}" )
+    {
+      timeout(time: 1, unit: 'HOURS') {
+        sh """#!/usr/bin/env bash
+          set -x
+          cd ${paths.project_src_prefix}
+          tox --version
+          tox -vv --workdir /tmp/.tensile-tox ${tox_file} -e py27
         """
       }
     }
