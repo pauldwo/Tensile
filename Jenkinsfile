@@ -1,5 +1,30 @@
 #!/usr/bin/env groovy
 
+properties([pipelineTriggers([cron('@midnight'), [$class: 'PeriodicFolderTrigger', interval: '5m']])])
+
+// check if the job was started by a timer
+@NonCPS
+def isJobStartedByTimer() {
+    def startedByTimer = false
+    try {
+        def buildCauses = currentBuild.rawBuild.getCauses()
+        for ( buildCause in buildCauses ) {
+            if (buildCause != null) {
+                def causeDescription = buildCause.getShortDescription()
+                echo "shortDescription: ${causeDescription}"
+                if (causeDescription.contains("Started by timer")) {
+                    startedByTimer = true
+                }
+            }
+        }
+    } catch(theError) {
+        echo "Error getting build cause"
+    }
+
+    return startedByTimer
+}
+
+
 // Generated from snippet generator 'properties; set job properties'
 properties([buildDiscarder(logRotator(
     artifactDaysToKeepStr: '',
@@ -157,6 +182,7 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
 
   build_image.inside( docker_args.docker_run_args )
   {
+    def tox_file = isJobStartedByTimer() ? "test/nightly.py" : "test/pre_checkin.py";
     stage( "Test ${compiler_args.compiler_name} ${compiler_args.build_config}" )
     {
       timeout(time: 1, unit: 'HOURS') {
@@ -164,7 +190,7 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
           set -x
           cd ${paths.project_src_prefix}
           tox --version
-          tox -vv --workdir /tmp/.tensile-tox
+          tox -vv --workdir /tmp/.tensile-tox ${tox_file}
         """
       }
     }
