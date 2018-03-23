@@ -2,7 +2,7 @@
 
 // Generated from snippet generator 'properties; set job properties'
 properties([
-    pipelineTriggers([cron('35 10 * * *'), [$class: 'PeriodicFolderTrigger', interval: '5m']]),
+    pipelineTriggers([cron('40 10 * * *'), [$class: 'PeriodicFolderTrigger', interval: '5m']]),
     buildDiscarder(logRotator(
       artifactDaysToKeepStr: '',
       artifactNumToKeepStr: '',
@@ -183,33 +183,17 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
   build_image.inside( docker_args.docker_run_args )
   {
     def tox_file = isJobStartedByTimer() ? "test/nightly.py" : "test/pre_checkin.py";
-    stage( "Test ${compiler_args.compiler_name} ${compiler_args.build_config}" )
+    stage( "pyflakes" )
     {
       timeout(time: 1, unit: 'HOURS') {
         sh """#!/usr/bin/env bash
           set -x
           cd ${paths.project_src_prefix}
           tox --version
-          tox -vv --workdir /tmp/.tensile-tox ${tox_file}
+          tox -vv --workdir /tmp/.tensile-tox ${tox_file} -e lint
         """
       }
     }
-  }
-
-  return void
-}
-
-////////////////////////////////////////////////////////////////////////
-// This encapsulates the cmake configure, build and package commands
-// Leverages docker containers to encapsulate the build in a fixed environment
-def docker_build_inside_image( def build_image, compiler_data compiler_args, docker_data docker_args, project_paths paths )
-{
-  // Construct a relative path from build directory to src directory; used to invoke cmake
-  String rel_path_to_src = g_relativize( pwd( ), paths.project_src_prefix, paths.project_build_prefix )
-
-  build_image.inside( docker_args.docker_run_args )
-  {
-    def tox_file = isJobStartedByTimer() ? "test/nightly.py" : "test/pre_checkin.py";
     stage( "Test ${compiler_args.compiler_name} ${compiler_args.build_config}" )
     {
       timeout(time: 1, unit: 'HOURS') {
@@ -217,7 +201,7 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
           set -x
           cd ${paths.project_src_prefix}
           tox --version
-          tox -vv --workdir /tmp/.tensile-tox ${tox_file}
+          tox -vv --workdir /tmp/.tensile-tox ${tox_file} -e py27
         """
       }
     }
