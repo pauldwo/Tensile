@@ -1,6 +1,13 @@
-"""
-These pre-checkin tests trade-off time and coverage, favoring time.
-"""
+#
+# These pre-checkin tests are fast but lack coverage. Slow tests with more coverage are in nightly.py.
+#
+# To execute this test file, install Tensile, then:
+#   py.test -v test/pre_checkin.py
+#
+# To run test directly, with complete output:
+#   mkdir build && cd build
+#   python ../Tensile/Tensile.py ../Tensile/Configs/test_hgemm_defaults.yaml ./
+#
 
 import Tensile.Tensile as Tensile
 
