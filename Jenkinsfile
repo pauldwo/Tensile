@@ -1,6 +1,23 @@
 #!/usr/bin/env groovy
 
-properties([pipelineTriggers([cron('@midnight'), [$class: 'PeriodicFolderTrigger', interval: '5m']])])
+// Generated from snippet generator 'properties; set job properties'
+properties([
+    pipelineTriggers([cron('@hourly'), [$class: 'PeriodicFolderTrigger', interval: '5m']]),
+    buildDiscarder(logRotator(
+      artifactDaysToKeepStr: '',
+      artifactNumToKeepStr: '',
+      daysToKeepStr: '',
+      numToKeepStr: '10')),
+    disableConcurrentBuilds(),
+    // parameters([booleanParam( name: 'push_image_to_docker_hub', defaultValue: false, description: 'Push tensile image to rocm docker-hub' )]),
+    [$class: 'CopyArtifactPermissionProperty', projectNames: '*']
+  ])
+
+////////////////////////////////////////////////////////////////////////
+// -- AUXILLARY HELPER FUNCTIONS
+// import hudson.FilePath;
+import java.nio.file.Path;
+
 
 // check if the job was started by a timer
 @NonCPS
@@ -23,23 +40,6 @@ def isJobStartedByTimer() {
 
     return startedByTimer
 }
-
-
-// Generated from snippet generator 'properties; set job properties'
-properties([buildDiscarder(logRotator(
-    artifactDaysToKeepStr: '',
-    artifactNumToKeepStr: '',
-    daysToKeepStr: '',
-    numToKeepStr: '10')),
-    disableConcurrentBuilds(),
-    // parameters([booleanParam( name: 'push_image_to_docker_hub', defaultValue: false, description: 'Push tensile image to rocm docker-hub' )]),
-    [$class: 'CopyArtifactPermissionProperty', projectNames: '*']
-   ])
-
-////////////////////////////////////////////////////////////////////////
-// -- AUXILLARY HELPER FUNCTIONS
-// import hudson.FilePath;
-import java.nio.file.Path;
 
 ////////////////////////////////////////////////////////////////////////
 // Return build number of upstream job
@@ -183,7 +183,7 @@ def docker_build_inside_image( def build_image, compiler_data compiler_args, doc
   build_image.inside( docker_args.docker_run_args )
   {
     def tox_file = isJobStartedByTimer() ? "test/nightly.py" : "test/pre_checkin.py";
-    stage( "Test ${compiler_args.compiler_name} ${compiler_args.build_config}" )
+    stage( "lint" )
     {
       timeout(time: 1, unit: 'HOURS') {
         sh """#!/usr/bin/env bash
